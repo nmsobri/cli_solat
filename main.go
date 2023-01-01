@@ -7,26 +7,32 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 )
 
 type Solat struct {
-	Day []struct {
-		Date      string `json:"date"`
-		Imsak     string `json:"imsak"`
-		Subuh     string `json:"subuh"`
-		Syuruk    string `json:"syuruk"`
-		Zohor     string `json:"zohor"`
-		Asar      string `json:"asar"`
-		Maghrib   string `json:"maghrib"`
-		Iswak     string `json:"iswak"`
-		Direction string `json:"direction"`
-	} `json:"solat"`
+	PrayerTime []struct {
+		Hijri   string `json:"hijri"`
+		Date    string `json:"date"`
+		Day     string `json:"day"`
+		Imsak   string `json:"imsak"`
+		Fajr    string `json:"fajr"`
+		Syuruk  string `json:"syuruk"`
+		Dhuhr   string `json:"dhuhr"`
+		Asr     string `json:"asr"`
+		Maghrib string `json:"maghrib"`
+		Isha    string `json:"isha"`
+	} `json:"prayerTime"`
+	Status     string `json:"status"`
+	ServerTime string `json:"serverTime"`
+	PeriodType string `json:"periodType"`
+	Lang       string `json:"lang"`
+	Zone       string `json:"zone"`
+	Bearing    string `json:"bearing"`
 }
 
-const API = "https://cms.waktusolat.digital/esolatjson.php?zon="
-const DEFAULT_ZONE = "png01"
+const API = "https://www.e-solat.gov.my/index.php?r=esolatApi/takwimsolat&period=month&zone="
+const DEFAULT_ZONE = "PNG01"
 
 func getJson(url string) ([]byte, error) {
 	var httpClient = &http.Client{Timeout: 10 * time.Second}
@@ -59,242 +65,91 @@ func showZone() {
 
 	zone := `
 Johor:
-  jhr01 Pemanggil
-  jhr02 Kota Tinggi
-  jhr02 Mersing
-  jhr02 Johor Bahru
-  jhr03 Kluang
-  jhr03 Pontian
-  jhr04 Batu Pahat
-  jhr04 Muar
-  jhr04 Segamat
-  jhr04 Gemas
+  JHR01 Pulau Aur dan Pulau Pemanggil
+  JHR02 Johor Bahru, Kota Tinggi, Mersing, Kulai
+  JHR03 Kluang, Pontian
+  JHR04 Batu Pahat, Muar, Segamat, Gemas Johor, Tangkak
 
-Kedah
-  kdh01 Kota Setar
-  kdh01 Kubang Pasu
-  kdh01 Pokok Sena
-  kdh02 Pendang
-  kdh02 Kuala Muda
-  kdh02 Yan
-  kdh03 Padang Terap
-  kdh03 Sik
-  kdh04 Baling
-  kdh05 Kulim
-  kdh05 Bandar Baharu
-  kdh06 Langkawi
-  kdh07 Gunung Jerai
+Kedah:
+  KDH01 Kota Setar, Kubang Pasu, Pokok Sena (Daerah Kecil)
+  KDH02 Kuala Muda, Yan, Pendang
+  KDH03 Padang Terap, Sik
+  KDH04 Baling
+  KDH05 Bandar Baharu, Kulim
+  KDH06 Langkawi
+  KDH07 Puncak Gunung Jerai
 
-Kelantan
-  ktn01 Kota Bahru
-  ktn01 Bachok
-  ktn01 Pasir Puteh
-  ktn01 Tumpat
-  ktn01 Pasir Mas
-  ktn01 Tanah Merah
-  ktn01 Machang
-  ktn01 Kuala Krai
-  ktn01 Mukim Chiku
-  ktn03 Jeli
-  ktn03 Gua Musang
-  ktn03 Mukim Galas
-  ktn03 Bertam
+Kelantan:
+  KTN01 Bachok, Kota Bharu, Machang, Pasir Mas, Pasir Puteh, Tanah Merah, Tumpat, Kuala Krai, Mukim Chiku
+  KTN02 Gua Musang (Daerah Galas Dan Bertam), Jeli, Jajahan Kecil Lojing
 
-Melaka
-  mlk01 Bandar Melaka
-  mlk01 Alor Gajah
-  mlk01 Jasin
-  mlk01 Masjid Tanah
-  mlk01 Merlimau
-  mlk01 Nyalas
+Melaka:
+  MLK01 SELURUH NEGERI MELAKA
 
-Negeri Sembilan
-  ngs01 Jempol
-  ngs01 Tampin
-  ngs02 Port Dickson
-  ngs02 Seremban
-  ngs02 Kuala Pilah
-  ngs02 Jelebu
-  ngs02 Rembau
+Negeri Sembilan:
+  NGS01 Tampin, Jempol
+  NGS02 Jelebu, Kuala Pilah, Rembau
+  NGS03 Port Dickson, Seremban
 
-Pahang
-  phg01 Pulau Tioman
-  phg02 Kuantan
-  phg02 Pekan
-  phg02 Rompin
-  phg02 Muadzam Shah
-  phg03 Maran
-  phg03 Chenor
-  phg03 Temerloh
-  phg03 Bera
-  phg03 Jerantut
-  phg04 Bentong
-  phg04 Raub
-  phg04 Kuala Lipis
-  phg05 Genting Sempah
-  phg05 Janda Baik
-  phg05 Bukit Tinggi
-  phg06 Bukit Fraser
-  phg06 Genting Highlands
-  phg06 Cameron Highlands
+Pahang:
+  PHG01 Pulau Tioman
+  PHG02 Kuantan, Pekan, Rompin, Muadzam Shah
+  PHG03 Jerantut, Temerloh, Maran, Bera, Chenor, Jengka
+  PHG04 Bentong, Lipis, Raub
+  PHG05 Genting Sempah, Janda Baik, Bukit Tinggi
+  PHG06 Cameron Highlands, Genting Higlands, Bukit Fraser
 
-Perak
-  prk01 Tapah
-  prk01 Slim River
-  prk01 Tanjung Malim
-  prk02 Ipoh
-  prk02 Batu Gajah
-  prk02 Kampar
-  prk02 Sungai Siput
-  prk02 Kuala Kangsar
-  prk03 Pengkalan Hulu
-  prk03 Grik
-  prk03 Lenggong
-  prk04 Temenggung
-  prk04 Belum
-  prk05 Teluk Intan
-  prk05 Bagan Datoh
-  prk05 Kampung Gajah
-  prk05 Sri Iskandar
-  prk05 Beruas
-  prk05 Parit
-  prk05 Lumut
-  prk05 Setiawan
-  prk05 Pulau Pangkor
-  prk06 Selama
-  prk06 Taiping
-  prk06 Bagan Serai
-  prk06 Parit Buntar
-  prk07 Bukit Larut
+Perlis:
+  PLS01 Kangar, Padang Besar, Arau
 
-Perlis
-  pls01 Kangar
-  pls01 Padang Besar
-  pls01 Arau
+Pulau Pinang:
+  PNG01 Seluruh Negeri Pulau Pinang
 
-Pulau Pinang
-  png01 Pulau Pinang
+Perak:
+  PRK01 Tapah, Slim River, Tanjung Malim
+  PRK02 Kuala Kangsar, Sg. Siput , Ipoh, Batu Gajah, Kampar
+  PRK03 Lenggong, Pengkalan Hulu, Grik
+  PRK04 Temengor, Belum
+  PRK05 Kg Gajah, Teluk Intan, Bagan Datuk, Seri Iskandar, Beruas, Parit, Lumut, Sitiawan, Pulau Pangkor
+  PRK06 Selama, Taiping, Bagan Serai, Parit Buntar
+  PRK07 Bukit Larut
 
-Sabah
-  sbh01 Sandakan
-  sbh01 Bandar Bukit Garam
-  sbh01 Semawang
-  sbh01 Temanggong
-  sbh01 Tambisan
-  sbh02 Pinangah
-  sbh02 Terusan
-  sbh02 Beluran
-  sbh02 Kuamut
-  sbh02 Telupit
-  sbh03 Lahad Datu
-  sbh03 Kunak
-  sbh03 Silabukan
-  sbh03 Tungku
-  sbh03 Sahabat
-  sbh03 Semporna
-  sbh04 Tawau
-  sbh04 Balong
-  sbh04 Merotai
-  sbh04 Kalabakan
-  sbh05 Kudat
-  sbh05 Kota Marudu
-  sbh05 Pitas
-  sbh05 Pulau Banggi
-  sbh06 Gunung Kinabalu
-  sbh07 Papar
-  sbh07 Ranau
-  sbh07 Kota Belud
-  sbh07 Tuaran
-  sbh07 Penampang
-  sbh07 Kota Kinabalu
-  sbh08 Pensiangan
-  sbh08 Keningau
-  sbh08 Tambunan
-  sbh08 Nabawan
-  sbh09 Sipitang
-  sbh09 Membakut
-  sbh09 Beaufort
-  sbh09 Kuala Penyu
-  sbh09 Weston
-  sbh09 Tenom
-  sbh09 Long Pa Sia
+Sabah:
+  SBH01 Bahagian Sandakan (Timur), Bukit Garam, Semawang, Temanggong, Tambisan, Bandar Sandakan, Sukau
+  SBH02 Beluran, Telupid, Pinangah, Terusan, Kuamut, Bahagian Sandakan (Barat)
+  SBH03 Lahad Datu, Silabukan, Kunak, Sahabat, Semporna, Tungku, Bahagian Tawau  (Timur)
+  SBH04 Bandar Tawau, Balong, Merotai, Kalabakan, Bahagian Tawau (Barat)
+  SBH05 Kudat, Kota Marudu, Pitas, Pulau Banggi, Bahagian Kudat
+  SBH06 Gunung Kinabalu
+  SBH07 Kota Kinabalu, Ranau, Kota Belud, Tuaran, Penampang, Papar, Putatan, Bahagian Pantai Barat
+  SBH08 Pensiangan, Keningau, Tambunan, Nabawan, Bahagian Pendalaman (Atas)
+  SBH09 Beaufort, Kuala Penyu, Sipitang, Tenom, Long Pasia, Membakut, Weston, Bahagian Pendalaman (Bawah)
 
-Sarawak
-  swk01 Limbang
-  swk01 Sundar
-  swk01 Terusan
-  swk01 Lawas
-  swk02 Niah
-  swk02 Belaga
-  swk02 Sibuti
-  swk02 Miri
-  swk02 Bekenu
-  swk02 Marudi
-  swk03 Song
-  swk03 Balingian
-  swk03 Sebauh
-  swk03 Bintulu
-  swk03 Tatau
-  swk03 Kapit
-  swk04 Igan
-  swk04 Kanowit
-  swk04 Sibu
-  swk04 Dalat
-  swk04 Oya
-  swk05 Belawai
-  swk05 Matu
-  swk05 Daro
-  swk05 Sarikei
-  swk05 Julau
-  swk05 Bitangor
-  swk05 Rajang
-  swk06 Kabong
-  swk06 Lingga
-  swk06 Sri Aman
-  swk06 Engkelili
-  swk06 Betong
-  swk06 Spaoh
-  swk06 Pusa
-  swk06 Saratok
-  swk06 Roban
-  swk06 Debak
-  swk07 Samarahan
-  swk07 Simunjan
-  swk07 Serian
-  swk07 Sebuyau
-  swk07 Meludam
-  swk08 Kuching
-  swk08 Bau
-  swk08 Lundu
-  swk08 Sematan
-  swk09 Zon Khas
-      
-Selangor
-  sgr01 Gombak
-  sgr01 Hulu Selangor
-  sgr01 Rawang
-  sgr01 Hulu Langat
-  sgr01 Sepang
-  sgr01 Petaling Jaya
-  sgr01 Shah Alam
-  sgr02 Sabak Bernam
-  sgr02 Kuala Selangor
-  sgr03 Klang
-  sgr03 Kuala Langat
+Selangor:
+  SGR01 Gombak, Petaling, Sepang, Hulu Langat, Hulu Selangor, S.Alam
+  SGR02 Kuala Selangor, Sabak Bernam
+  SGR03 Klang, Kuala Langat
 
-Terengganu
-  trg01 Kuala Terengganu
-  trg01 Marang
-  trg02 Besut
-  trg02 Setiu
-  trg03 Hulu Terengganu
-  trg04 Kemaman
-  trg04 Dungun
+Sarawak:
+  SWK01 Limbang, Lawas, Sundar, Trusan
+  SWK02 Miri, Niah, Bekenu, Sibuti, Marudi
+  SWK03 Pandan, Belaga, Suai, Tatau, Sebauh, Bintulu
+  SWK04 Sibu, Mukah, Dalat, Song, Igan, Oya, Balingian, Kanowit, Kapit
+  SWK05 Sarikei, Matu, Julau, Rajang, Daro, Bintangor, Belawai
+  SWK06 Lubok Antu, Sri Aman, Roban, Debak, Kabong, Lingga, Engkelili, Betong, Spaoh, Pusa, Saratok
+  SWK07 Serian, Simunjan, Samarahan, Sebuyau, Meludam
+  SWK08 Kuching, Bau, Lundu, Sematan
+  SWK09 Zon Khas (Kampung Patarikan)
 
-Wilayah Persekutuan
-  wly01 Putrajaya
-  wly01 Kuala Lumpur
-  wly02 Labuan
+Terengganu:
+  TRG01 Kuala Terengganu, Marang, Kuala Nerus
+  TRG02 Besut, Setiu
+  TRG03 Hulu Terengganu
+  TRG04 Dungun, Kemaman
+
+Wilayah Persekutuan:
+  WLY01 Kuala Lumpur, Putrajaya
+  WLY02 Labuan
 `
 
 	fmt.Println(zone)
@@ -348,21 +203,15 @@ func main() {
 	}
 
 	now := time.Now()
-	year, month, day := now.Date()
+	_, _, today := now.Date()
 
-	for _, slt := range solat.Day {
-		thisDate := fmt.Sprintf("%s/%d/%d", slt.Date, month, year)
-		currentDate, err := strconv.Atoi(slt.Date)
-
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s", err.Error())
-			return
-		}
+	for index, slt := range solat.PrayerTime {
+		var current_day = index + 1
 
 		fmt.Printf("Tarikh: %s, Imsak: %s, Subuh: %s, Syuruk: %s, Zohor: %s, Asar: %s, Maghrib: %s, Isyak: %s",
-			thisDate, slt.Imsak, slt.Subuh, slt.Syuruk, slt.Zohor, slt.Asar, slt.Maghrib, slt.Iswak)
+			slt.Date, slt.Imsak, slt.Fajr, slt.Syuruk, slt.Dhuhr, slt.Asr, slt.Maghrib, slt.Isha)
 
-		if day == currentDate {
+		if current_day == today {
 			fmt.Println(" ****")
 		} else {
 			fmt.Println()
